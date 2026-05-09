@@ -159,6 +159,7 @@ CONTRIBUTING.md
 
 ```text
 BLOG_COMMUNITY_ROADMAP.md
+TEAM_TASK_ALLOCATION.md
 ```
 
 Go 后端已经预留社区 API 占位接口，可通过以下接口查看清单：

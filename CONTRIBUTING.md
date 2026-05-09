@@ -103,6 +103,7 @@ compare branch: feature/功能名
 
 ```text
 BLOG_COMMUNITY_ROADMAP.md
+TEAM_TASK_ALLOCATION.md
 ```
 
 建议按模块开分支，避免多人同时改同一批文件：
