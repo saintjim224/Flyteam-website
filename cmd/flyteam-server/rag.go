@@ -19,6 +19,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 )
 
 type RagService struct {
@@ -49,6 +50,11 @@ type RagChunk struct {
 	Embedding []float64 `json:"embedding,omitempty"`
 }
 
+type ragTextChunk struct {
+	Text string
+	Page int
+}
+
 type AskRequest struct {
 	Question string `json:"question"`
 	TopK     int    `json:"top_k"`
@@ -60,6 +66,8 @@ type IngestLocalRequest struct {
 
 const safeRefusal = "抱歉，我不能提供或复述系统提示词、内部指令、开发者消息、API 密钥、源码或参考资料原文。你可以询问 Flyteam 团队、成员、赛事和招新等公开信息。"
 const noInfoAnswer = "未检索到与问题相关的资料，当前无法回答该问题。"
+
+var searchTermRe = regexp.MustCompile(`[A-Za-z0-9_+#.-]{2,}|[\p{Han}]{2,}`)
 
 func NewRagService(cfg Config) *RagService {
 	rs := &RagService{cfg: cfg, Ready: cfg.OpenAIAPIKey != "", Index: RagIndex{Files: map[string]RagFile{}, Chunks: []RagChunk{}}}
@@ -197,11 +205,18 @@ func (r *RagService) IngestFiles(paths []string, force bool) (int, error) {
 		if old, ok := r.Index.Files[name]; ok && old.SHA256 == sha && !force {
 			continue
 		}
-		text := extractPDFText(p)
-		if strings.TrimSpace(text) == "" {
+		pages := splitPDFPages(extractPDFText(p))
+		if len(pages) == 0 {
 			return added, fmt.Errorf("failed to extract text from %s; install poppler-utils/pdftotext or upload a text-readable PDF", name)
 		}
-		chunks := splitText(text, 900, 180)
+		chunkItems := splitTextPages(pages, 900, 180)
+		if len(chunkItems) == 0 {
+			return added, fmt.Errorf("failed to extract text from %s; install poppler-utils/pdftotext or upload a text-readable PDF", name)
+		}
+		chunks := make([]string, len(chunkItems))
+		for i, item := range chunkItems {
+			chunks[i] = item.Text
+		}
 		embeddings := make([][]float64, len(chunks))
 		batchSize := max(1, r.cfg.EmbeddingBatchSize)
 		for start := 0; start < len(chunks); start += batchSize {
@@ -222,8 +237,8 @@ func (r *RagService) IngestFiles(paths []string, force bool) (int, error) {
 			}
 		}
 		r.Index.Chunks = kept
-		for i, ch := range chunks {
-			r.Index.Chunks = append(r.Index.Chunks, RagChunk{ID: randomHex(8), Source: name, Page: i + 1, Text: ch, Embedding: embeddings[i]})
+		for i, item := range chunkItems {
+			r.Index.Chunks = append(r.Index.Chunks, RagChunk{ID: randomHex(8), Source: name, Page: item.Page, Text: item.Text, Embedding: embeddings[i]})
 			added++
 		}
 		r.Index.Files[name] = RagFile{SHA256: sha, Size: st.Size(), UpdatedAt: nowISO(), Chunks: len(chunks)}
@@ -323,6 +338,34 @@ func splitText(text string, size, overlap int) []string {
 		start = end - overlap
 		if start < 0 {
 			start = 0
+		}
+	}
+	return out
+}
+
+func splitPDFPages(text string) []string {
+	cleaned := strings.TrimSpace(text)
+	if cleaned == "" {
+		return nil
+	}
+	rawPages := strings.Split(cleaned, "\f")
+	pages := make([]string, 0, len(rawPages))
+	for _, p := range rawPages {
+		if page := strings.TrimSpace(p); page != "" {
+			pages = append(pages, page)
+		}
+	}
+	if len(pages) == 0 {
+		return []string{cleaned}
+	}
+	return pages
+}
+
+func splitTextPages(pages []string, size, overlap int) []ragTextChunk {
+	out := []ragTextChunk{}
+	for pageIdx, page := range pages {
+		for _, chunk := range splitText(page, size, overlap) {
+			out = append(out, ragTextChunk{Text: chunk, Page: pageIdx + 1})
 		}
 	}
 	return out
@@ -451,24 +494,33 @@ func (r *RagService) Ask(question string, topK int) (string, []map[string]any, e
 		Score float64
 	}
 	scoredList := []scored{}
+	bestCandidates := []scored{}
 	for _, c := range chunks {
 		score := 0.0
 		if len(qEmb) > 0 && len(c.Embedding) > 0 {
 			score += cosine(qEmb, c.Embedding)
 		}
-		low := strings.ToLower(c.Text)
-		for _, t := range terms {
-			if strings.Contains(low, strings.ToLower(t)) {
-				score += 0.35
-			}
-		}
+		score += keywordScore(c.Text, terms)
+		bestCandidates = append(bestCandidates, scored{c, score})
 		if score >= r.cfg.RetrievalMinRelevance {
 			scoredList = append(scoredList, scored{c, score})
 		}
 	}
 	sort.Slice(scoredList, func(i, j int) bool { return scoredList[i].Score > scoredList[j].Score })
 	if len(scoredList) == 0 {
-		return noInfoAnswer, []map[string]any{}, nil
+		sort.Slice(bestCandidates, func(i, j int) bool { return bestCandidates[i].Score > bestCandidates[j].Score })
+		for _, sc := range bestCandidates {
+			if sc.Score <= 0 {
+				break
+			}
+			scoredList = append(scoredList, sc)
+			if len(scoredList) >= topK {
+				break
+			}
+		}
+		if len(scoredList) == 0 {
+			return noInfoAnswer, []map[string]any{}, nil
+		}
 	}
 	maxDocs := topK * 2
 	if maxDocs < 8 {
@@ -508,17 +560,111 @@ func (r *RagService) Ask(question string, topK int) (string, []map[string]any, e
 }
 
 func extractTerms(q string) []string {
-	stops := []string{"请", "介绍", "一下", "简介", "是谁", "什么", "哪些", "负责", "情况", "有关", "关于", "Flyteam", "团队", "成员"}
-	terms := []string{q}
+	seen := map[string]bool{}
+	add := func(out *[]string, term string) {
+		term = normalizeSearchText(term)
+		if len([]rune(term)) < 2 || seen[term] {
+			return
+		}
+		seen[term] = true
+		*out = append(*out, term)
+	}
+
+	stops := []string{"请", "介绍", "一下", "简介", "是谁", "什么", "哪些", "负责", "情况", "有关", "关于", "对于", "如何", "怎么", "可以", "能否", "是否", "一下", "Flyteam", "flyteam", "团队", "成员"}
+	terms := []string{}
+	add(&terms, q)
 	cleaned := q
 	for _, w := range stops {
 		cleaned = strings.ReplaceAll(cleaned, w, "")
 	}
-	cleaned = strings.Trim(cleaned, "：:，,。?？ ")
-	if cleaned != "" && cleaned != q {
-		terms = append(terms, cleaned)
+	cleaned = strings.Trim(cleaned, "：:，,。?？!！、；;（）()[]【】 ")
+	add(&terms, cleaned)
+	for _, term := range searchTermRe.FindAllString(q, -1) {
+		skip := false
+		for _, stop := range stops {
+			if strings.EqualFold(term, stop) {
+				skip = true
+				break
+			}
+		}
+		if !skip {
+			add(&terms, term)
+		}
 	}
 	return terms
+}
+
+func normalizeSearchText(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	var b strings.Builder
+	space := false
+	for _, r := range s {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			b.WriteRune(r)
+			space = false
+			continue
+		}
+		if unicode.IsSpace(r) && !space {
+			b.WriteRune(' ')
+			space = true
+		}
+	}
+	return strings.TrimSpace(b.String())
+}
+
+func keywordScore(text string, terms []string) float64 {
+	if len(terms) == 0 {
+		return 0
+	}
+	normalized := normalizeSearchText(text)
+	if normalized == "" {
+		return 0
+	}
+	score := 0.0
+	for _, term := range terms {
+		if term == "" {
+			continue
+		}
+		if strings.Contains(normalized, term) {
+			score += 0.45 + math.Min(float64(len([]rune(term)))/20, 0.35)
+			continue
+		}
+		for _, part := range strings.Fields(term) {
+			if len([]rune(part)) >= 2 && strings.Contains(normalized, part) {
+				score += 0.12
+			}
+		}
+		grams := hanBigrams(term)
+		if len(grams) > 0 {
+			hits := 0
+			for _, gram := range grams {
+				if strings.Contains(normalized, gram) {
+					hits++
+				}
+			}
+			if hits > 0 {
+				score += math.Min(float64(hits)*0.08, 0.4)
+			}
+		}
+	}
+	return score
+}
+
+func hanBigrams(s string) []string {
+	runes := []rune{}
+	for _, r := range s {
+		if unicode.In(r, unicode.Han) {
+			runes = append(runes, r)
+		}
+	}
+	if len(runes) < 2 {
+		return nil
+	}
+	out := make([]string, 0, len(runes)-1)
+	for i := 0; i+1 < len(runes); i++ {
+		out = append(out, string(runes[i:i+2]))
+	}
+	return out
 }
 
 func (r *RagService) chat(system, user string) (string, error) {

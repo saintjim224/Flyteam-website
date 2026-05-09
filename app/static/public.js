@@ -807,7 +807,7 @@ function initChat() {
   fab.addEventListener("click", () => panel.classList.toggle("open"));
   closeBtn.addEventListener("click", () => panel.classList.remove("open"));
 
-  sendBtn.addEventListener("click", async () => {
+  const sendQuestion = async () => {
     const question = chatText.value.trim();
     if (!question || state.chatBusy) return;
     state.chatBusy = true;
@@ -822,7 +822,7 @@ function initChat() {
       });
       let answer = data.answer || "暂无回答";
       if (Array.isArray(data.sources) && data.sources.length) {
-        const src = data.sources.slice(0, 2).map((s) => `${s.source} 第${Number(s.page) + 1}页`).join("；");
+        const src = data.sources.slice(0, 2).map((s) => `${s.source} 第${Number(s.page) || 1}页`).join("；");
         answer += `\n\n来源：${src}`;
       }
       appendChat("assistant", answer);
@@ -830,6 +830,14 @@ function initChat() {
       appendChat("assistant", `提问失败：${err.message}`);
     } finally {
       state.chatBusy = false;
+    }
+  };
+
+  sendBtn.addEventListener("click", sendQuestion);
+  chatText.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendQuestion();
     }
   });
 }

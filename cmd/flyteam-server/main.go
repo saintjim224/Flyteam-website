@@ -147,7 +147,7 @@ func LoadConfig() (Config, error) {
 		EmbeddingModel:        getenv("EMBEDDING_MODEL", "text-embedding-v4"),
 		ChatModel:             getenv("CHAT_MODEL", "qwen-plus"),
 		EmbeddingBatchSize:    atoi("EMBEDDING_BATCH_SIZE", 10),
-		RetrievalMinRelevance: atof("RETRIEVAL_MIN_RELEVANCE", 0.12),
+		RetrievalMinRelevance: atof("RETRIEVAL_MIN_RELEVANCE", 0.08),
 		AdminToken:            os.Getenv("ADMIN_TOKEN"),
 		AdminPassword:         os.Getenv("ADMIN_PASSWORD"),
 		AdminSessionHours:     atoi("ADMIN_SESSION_HOURS", 8),
