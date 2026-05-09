@@ -381,6 +381,9 @@ func (s *Server) routeAPI(w http.ResponseWriter, r *http.Request, path string) {
 	case path == "/api/chat" && r.Method == http.MethodPost:
 		s.handleChat(w, r)
 	default:
+		if s.routeCommunityAPI(w, r, path) {
+			return
+		}
 		writeError(w, http.StatusNotFound, "Not found.")
 	}
 }
@@ -390,7 +393,7 @@ func (s *Server) setSecurityHeaders(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Frame-Options", "SAMEORIGIN")
 	w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 	w.Header().Set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Admin-Token, X-CSRF-Token")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Admin-Token, X-User-Token, X-CSRF-Token")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 }
 

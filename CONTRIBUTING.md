@@ -97,6 +97,30 @@ compare branch: feature/功能名
 - `fix/xxx`：问题修复分支，例如 `fix/upload-check`。
 - `docs/xxx`：文档分支，例如 `docs/deploy-guide`。
 
+## 博客社区化改造协作
+
+如果参与“普通用户注册、博客文章、评论、关注、私信、群聊”等大型改造，请先阅读仓库根目录：
+
+```text
+BLOG_COMMUNITY_ROADMAP.md
+```
+
+建议按模块开分支，避免多人同时改同一批文件：
+
+```text
+feature/community-user-auth
+feature/community-blog-core
+feature/community-blog-editor
+feature/community-comments-interactions
+feature/community-follow-space
+feature/community-private-message
+feature/community-group-chat
+feature/community-search-notification
+feature/community-admin-moderation
+```
+
+Go 后端已在 `cmd/flyteam-server/community_reserved.go` 预留 API，占位接口可通过 `GET /api/community/status` 查看。实际开发时，谁负责某个模块，就只实现对应模块的占位接口，并补齐权限校验和测试。
+
 ## 本地运行
 
 本项目后端已整体迁移为 Go，前端仍然是 `app/static/` 下的静态页面。
