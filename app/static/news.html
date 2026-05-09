@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flyteam News</title>
+  <link rel="stylesheet" href="/static/public.css" />
+</head>
+<body class="module-page news-page">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/">Flyteam</a>
+      <nav class="nav">
+          <a href="/">&#x9996;&#x9875;</a>
+          <a href="/news">&#x56e2;&#x961f;&#x65b0;&#x95fb;</a>
+          <a href="/review">&#x56e2;&#x961f;&#x56de;&#x987e;</a>
+          <a href="/awards">&#x5956;&#x9879;&#x8363;&#x8a89;</a>
+          <a href="/flyteamers">Flyteamers</a>
+          <a href="/recruit">&#x62db;&#x65b0;&#x62a5;&#x540d;</a>
+          <a href="/intro">&#x56e2;&#x961f;&#x7b80;&#x4ecb;</a>
+        </nav>
+    </div>
+  </header>
+
+  <main class="section light page-main">
+    <div class="container">
+      <section id="newsListView">
+        <div class="page-title-bar">
+          <p class="sub page-sub">Flyteam</p>
+          <h2>&#x56e2;&#x961f;&#x65b0;&#x95fb;</h2>
+          <p class="section-sub">&#x67e5;&#x770b;&#x56e2;&#x961f;&#x8fd1;&#x671f;&#x52a8;&#x6001;&#x4e0e;&#x8363;&#x8a89;&#x8bb0;&#x5f55;&#x3002;</p>
+        </div>
+        <div id="newsList" class="news-list"></div>
+      </section>
+
+      <article id="newsDetailView" class="news-detail" hidden>
+        <a class="news-back" href="/news">&#x2190; &#x8fd4;&#x56de;&#x65b0;&#x95fb;&#x5217;&#x8868;</a>
+        <h1 id="newsTitle">Loading...</h1>
+        <div id="newsMeta" class="news-detail-meta"></div>
+        <p id="newsSummary" class="news-detail-summary"></p>
+        <img id="newsCover" class="news-detail-cover" alt="cover" />
+        <div id="newsContent" class="news-detail-content"></div>
+        <div id="newsImages" class="news-detail-images"></div>
+      </article>
+    </div>
+  </main>
+
+  <div id="imgLightbox" class="img-lightbox" aria-hidden="true">
+    <figure>
+      <img id="imgLightboxImage" alt="preview" />
+      <figcaption id="imgLightboxCaption">&#x56fe;&#x7247;&#x9884;&#x89c8;</figcaption>
+      <div class="lightbox-actions">
+        <button id="imgLightboxClose" type="button">&#x5173;&#x95ed;</button>
+      </div>
+    </figure>
+  </div>
+
+  <script src="/static/page_backdrop.js"></script>
+  <script src="/static/news.js"></script>
+</body>
+</html>

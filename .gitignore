@@ -1,0 +1,38 @@
+﻿.venv/
+.vscode/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*$py.class
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+storage/*.log
+storage/**/*.log
+
+# Runtime data and private content
+storage/chroma/
+storage/uploads/
+storage/*.json
+storage/*.db
+storage/*.sqlite
+storage/*.sqlite3
+
+# Local RAG/source PDFs; upload on server/admin instead of committing by default
+*.pdf
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+
+# Local Codex/backups
+*.codex_backup
+*.bak
+

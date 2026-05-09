@@ -1,0 +1,555 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flyteam 后台管理</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+<body>
+  <div id="app" class="site admin-site">
+    <header class="admin-header">
+      <div class="admin-head-main">
+        <div>
+          <div class="brand">Flyteam 后台管理</div>
+          <p class="admin-sub">统一维护：首页轮播、团队新闻、团队回顾、团队简介、奖项、前辈墙、招新与知识库</p>
+        </div>
+
+        <div class="top-actions">
+          <span :class="['admin-pill', isAdmin ? 'on' : 'off']">
+            {{ isAdmin ? '已登录管理员（30分钟无操作自动退出）' : '访客模式' }}
+          </span>
+          <button v-if="!isAdmin" class="upload-mini" @click="adminLogin">后台登录</button>
+          <button v-else class="upload-mini" @click="adminLogout">退出后台</button>
+          <a class="link-mini" href="/" target="_blank" rel="noopener">前台首页</a>
+          <a class="link-mini" href="/flyteamers" target="_blank" rel="noopener">Flyteamers</a>
+          <a class="link-mini" href="/recruit" target="_blank" rel="noopener">招新页</a>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat-box">
+          <span class="num">{{ awards.length }}</span>
+          <span class="label">奖项</span>
+        </div>
+        <div class="stat-box">
+          <span class="num">{{ seniors.length }}</span>
+          <span class="label">前辈</span>
+        </div>
+        <div class="stat-box">
+          <span class="num">{{ recruitList.length }}</span>
+          <span class="label">报名</span>
+        </div>
+        <div class="stat-box">
+          <span class="num">{{ heroImages.length }}</span>
+          <span class="label">轮播图</span>
+        </div>
+        <div class="stat-box">
+          <span class="num">{{ newsList.length }}</span>
+          <span class="label">新闻</span>
+        </div>
+        <div class="stat-box">
+          <span class="num">{{ reviewAlbums.length }}</span>
+          <span class="label">回顾栏目</span>
+        </div>
+      </div>
+    </header>
+
+    <nav class="nav-menu module-tabs">
+      <button
+        v-for="item in visibleFeatureTabs"
+        :key="item.key"
+        :class="['nav-item', { active: activeFeature === item.key }]"
+        @click="setActiveFeature(item.key)"
+      >
+        {{ item.label }}
+      </button>
+    </nav>
+
+    <main id="modules" class="modules-wrap">
+      <section class="module-panel">
+        <article v-if="activeFeature === 'overview'" class="panel-card">
+          <h2>团队概况</h2>
+          <p class="hint">该文案会显示在前台首页头图下方“团队概况”位置。</p>
+          <textarea v-model="teamOverview" rows="6" placeholder="输入团队概况（可实时维护）"></textarea>
+          <div class="row top-gap">
+            <button @click="saveTeamOverview">保存团队概况</button>
+          </div>
+          <p class="hint">{{ overviewText }}</p>
+        </article>
+
+        <article v-if="activeFeature === 'gallery'" class="panel-card">
+          <h2>{{ isAdmin ? '轮播图片管理（实时）' : '轮播图片区' }}</h2>
+          <p class="hint" v-if="isAdmin">上传后会立刻进入首页轮播。</p>
+          <p class="hint" v-else>该区域仅展示轮播图片，修改需要管理员权限。</p>
+          <label class="uploader-row" v-if="isAdmin">
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple @change="onHeroImagePick" />
+          </label>
+          <p class="hint">{{ imageText }}</p>
+          <div class="gallery-grid">
+            <figure class="thumb" v-for="url in heroImages" :key="url">
+              <img :src="url" alt="轮播图" />
+              <figcaption>{{ getFileName(url) }}</figcaption>
+              <button v-if="isAdmin" class="danger" @click="deleteHeroImage(url)">删除</button>
+            </figure>
+          </div>
+        </article>
+
+        <article v-if="activeFeature === 'news'" class="panel-card">
+          <h2>团队新闻管理</h2>
+          <form class="award-form" @submit.prevent="addNews">
+            <input v-model.trim="newsForm.title" placeholder="新闻标题（必填）" required />
+            <input v-model.trim="newsForm.date" placeholder="日期（例如 2026-04-25）" />
+            <input v-model.trim="newsForm.source" placeholder="来源（例如 Flyteam）" />
+            <input v-model.trim="newsForm.summary" placeholder="新闻摘要（列表展示）" />
+            <label class="check-row"><input type="checkbox" v-model="newsForm.pinned" /> 是否置顶：置顶新闻会排在最前方</label>
+            <div class="news-format-toolbar">
+              <button type="button" class="ghost mini" @click="insertNewsFormat(newsForm, 'newsContentRef', 'h1')">一级标题</button>
+              <button type="button" class="ghost mini" @click="insertNewsFormat(newsForm, 'newsContentRef', 'h2')">二级标题</button>
+              <button type="button" class="ghost mini" @click="insertNewsFormat(newsForm, 'newsContentRef', 'h3')">小标题</button>
+              <button type="button" class="ghost mini" @click="insertNewsFormat(newsForm, 'newsContentRef', 'bold')">加粗</button>
+              <button type="button" class="ghost mini" @click="insertNewsFormat(newsForm, 'newsContentRef', 'quote')">引用</button>
+              <button type="button" class="ghost mini" @click="insertNewsFormat(newsForm, 'newsContentRef', 'ul')">无序列表</button>
+              <button type="button" class="ghost mini" @click="insertNewsFormat(newsForm, 'newsContentRef', 'ol')">有序列表</button>
+              <button type="button" class="ghost mini" @click="insertNewsFormat(newsForm, 'newsContentRef', 'hr')">分割线</button>
+            </div>
+            <textarea
+              ref="newsContentRef"
+              class="news-editor"
+              v-model="newsForm.content"
+              rows="12"
+              placeholder="新闻正文：支持 # 标题、## 二级标题、### 小标题、**加粗**、> 引用、- 列表、1. 有序列表、--- 分割线，以及图片标记"
+            ></textarea>
+            <p class="hint">
+              排版格式：<code># 一级标题</code>、<code>## 二级标题</code>、<code>### 小标题</code>、<code>**加粗**</code>、<code>&gt; 引用</code>、<code>- 列表</code>、<code>1. 有序列表</code>、<code>---</code>。
+              图片格式：<code>[[img:图片URL]]</code> 或 <code>[[img:图片URL|图注]]</code>。
+            </p>
+
+            <label class="uploader-row">
+              <span>上传新闻封面（单张）</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" @change="onNewsCoverPick" />
+            </label>
+            <img v-if="newsForm.cover_url" class="award-preview" :src="newsForm.cover_url" alt="新闻封面预览" />
+
+            <label class="uploader-row">
+              <span>上传正文配图（可多张）</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple @change="onNewsBodyImagesPick" />
+            </label>
+            <div class="news-inline-images" v-if="newsForm.image_urls.length">
+              <figure class="news-inline-thumb" v-for="url in newsForm.image_urls" :key="url">
+                <img :src="url" alt="正文配图预览" />
+                <div class="row top-gap">
+                  <button type="button" class="ghost mini" @click="insertNewsImageAtCursor(url)">插入正文</button>
+                  <button type="button" class="ghost mini" @click="insertNewsImageWithCaption(url)">插入+图注</button>
+                  <button type="button" class="danger mini" @click="removeNewsBodyImage(url)">移除</button>
+                </div>
+              </figure>
+            </div>
+
+            <p class="hint">{{ newsImageText }}</p>
+            <button type="submit">新增新闻</button>
+          </form>
+          <p class="hint">{{ newsText }}</p>
+          <div class="item-list">
+            <div class="list-item" v-for="n in newsList" :key="n.id">
+              <template v-if="editingNewsId === n.id">
+                <h3>编辑新闻</h3>
+                <div class="award-form news-edit-form">
+                  <input v-model.trim="newsEditForm.title" placeholder="新闻标题（必填）" />
+                  <input v-model.trim="newsEditForm.date" placeholder="日期" />
+                  <input v-model.trim="newsEditForm.source" placeholder="来源" />
+                  <input v-model.trim="newsEditForm.summary" placeholder="摘要" />
+                  <label class="check-row"><input type="checkbox" v-model="newsEditForm.pinned" /> 是否置顶</label>
+                  <div class="news-format-toolbar">
+                    <button type="button" class="ghost mini" @click="insertNewsFormat(newsEditForm, 'newsEditContentRef', 'h1')">一级标题</button>
+                    <button type="button" class="ghost mini" @click="insertNewsFormat(newsEditForm, 'newsEditContentRef', 'h2')">二级标题</button>
+                    <button type="button" class="ghost mini" @click="insertNewsFormat(newsEditForm, 'newsEditContentRef', 'h3')">小标题</button>
+                    <button type="button" class="ghost mini" @click="insertNewsFormat(newsEditForm, 'newsEditContentRef', 'bold')">加粗</button>
+                    <button type="button" class="ghost mini" @click="insertNewsFormat(newsEditForm, 'newsEditContentRef', 'quote')">引用</button>
+                    <button type="button" class="ghost mini" @click="insertNewsFormat(newsEditForm, 'newsEditContentRef', 'ul')">无序列表</button>
+                    <button type="button" class="ghost mini" @click="insertNewsFormat(newsEditForm, 'newsEditContentRef', 'ol')">有序列表</button>
+                    <button type="button" class="ghost mini" @click="insertNewsFormat(newsEditForm, 'newsEditContentRef', 'hr')">分割线</button>
+                  </div>
+                  <textarea ref="newsEditContentRef" class="news-editor" v-model="newsEditForm.content" rows="10" placeholder="编辑新闻正文"></textarea>
+                  <label class="uploader-row">
+                    <span>更换/上传新闻封面</span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" @change="onNewsEditCoverPick" />
+                  </label>
+                  <img v-if="newsEditForm.cover_url" class="award-preview" :src="newsEditForm.cover_url" alt="新闻封面预览" />
+                  <div class="row top-gap" v-if="newsEditForm.cover_url">
+                    <button type="button" class="ghost mini" @click="newsEditForm.cover_url = ''">移除封面</button>
+                  </div>
+                  <label class="uploader-row">
+                    <span>追加正文配图（可多张）</span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple @change="onNewsEditBodyImagesPick" />
+                  </label>
+                  <div class="news-inline-images" v-if="newsEditForm.image_urls.length">
+                    <figure class="news-inline-thumb" v-for="url in newsEditForm.image_urls" :key="url">
+                      <img :src="url" alt="正文配图预览" />
+                      <div class="row top-gap">
+                        <button type="button" class="ghost mini" @click="insertNewsEditImageAtCursor(url)">插入正文</button>
+                        <button type="button" class="ghost mini" @click="insertNewsEditImageWithCaption(url)">插入+图注</button>
+                        <button type="button" class="danger mini" @click="removeNewsEditBodyImage(url)">移除</button>
+                      </div>
+                    </figure>
+                  </div>
+                  <p class="hint">{{ newsEditImageText }}</p>
+                  <div class="row top-gap">
+                    <button type="button" @click="updateNews">保存修改</button>
+                    <button type="button" class="ghost" @click="cancelNewsEdit">取消编辑</button>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <img v-if="n.cover_url" class="award-cover" :src="n.cover_url" alt="新闻封面" />
+                <h3><span v-if="isPinned(n)" class="pin-badge">置顶</span>{{ n.title }}</h3>
+                <p class="meta">{{ [n.date || '未填写日期', n.source || 'Flyteam'].join(' | ') }}</p>
+                <p>{{ n.summary || '-' }}</p>
+                <a class="link-mini" :href="`/news?id=${n.id}`" target="_blank" rel="noopener">查看详情</a>
+                <button v-if="isAdmin" class="ghost" @click="startNewsEdit(n)">编辑</button>
+                <button v-if="isAdmin" class="danger" @click="removeNews(n.id)">删除</button>
+              </template>
+            </div>
+          </div>
+        </article>
+
+        <article v-if="activeFeature === 'review'" class="panel-card">
+          <h2>团队回顾栏目管理</h2>
+          <p class="hint">回顾现在按“栏目 / 相册”展示，例如：2026 春季团建、校赛复盘会议。每个栏目可配置摘要、正文与多张照片，前台点击栏目后进入独立详情页。</p>
+
+          <form v-if="isAdmin" class="award-form review-album-form" @submit.prevent="addReviewAlbum">
+            <input v-model.trim="reviewAlbumForm.title" placeholder="栏目标题（如：2026 春季团建）" required />
+            <input v-model.trim="reviewAlbumForm.date" placeholder="日期（例如 2026-05-08）" />
+            <input v-model.trim="reviewAlbumForm.category" placeholder="栏目类型（团建 / 会议 / 比赛 / 换届）" />
+            <textarea v-model.trim="reviewAlbumForm.summary" rows="3" placeholder="摘要：列表页展示的简短介绍"></textarea>
+            <textarea v-model.trim="reviewAlbumForm.content" rows="5" placeholder="详情正文：可写活动背景、过程、总结等"></textarea>
+            <label class="check-row"><input type="checkbox" v-model="reviewAlbumForm.pinned" /> 是否置顶：置顶回顾栏目会排在最前方</label>
+            <label class="uploader-row">
+              <span>上传栏目照片（可多张，第一张默认作为封面）</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple @change="onReviewAlbumFilesPick" />
+            </label>
+            <div class="news-inline-images" v-if="selectedReviewAlbumFiles.length">
+              <figure class="news-inline-thumb" v-for="file in selectedReviewAlbumFiles" :key="file.name + file.size">
+                <figcaption>{{ file.name }}</figcaption>
+              </figure>
+            </div>
+            <button type="submit">新增回顾栏目</button>
+          </form>
+          <p class="hint" v-else>团队回顾栏目由后台维护，访客仅可浏览。</p>
+          <p class="hint">{{ reviewText }}</p>
+
+          <div class="item-list">
+            <div class="list-item review-album-admin" v-for="album in reviewAlbums" :key="album.id">
+              <div class="review-album-head">
+                <img v-if="getReviewAlbumCover(album)" class="award-cover" :src="getReviewAlbumCover(album)" alt="回顾封面" />
+                <div>
+                  <h3><span v-if="isPinned(album)" class="pin-badge">置顶</span>{{ album.title || '未命名回顾' }}</h3>
+                  <p class="meta">{{ [album.date || '未填写日期', album.category || '团队回顾', `${(album.image_urls || []).length} 张照片`].join(' | ') }}</p>
+                  <p>{{ album.summary || '暂无摘要' }}</p>
+                  <a class="link-mini" :href="`/review/${album.id}`" target="_blank" rel="noopener">查看前台详情页</a>
+                </div>
+              </div>
+
+              <div class="award-form top-gap" v-if="isAdmin">
+                <input v-model.trim="album.title" placeholder="栏目标题" />
+                <input v-model.trim="album.date" placeholder="日期" />
+                <input v-model.trim="album.category" placeholder="栏目类型" />
+                <textarea v-model.trim="album.summary" rows="3" placeholder="摘要"></textarea>
+                <textarea v-model.trim="album.content" rows="5" placeholder="详情正文"></textarea>
+                <label class="check-row"><input type="checkbox" v-model="album.pinned" /> 是否置顶</label>
+                <label class="uploader-row">
+                  <span>追加照片到该栏目</span>
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple @change="onReviewAlbumAppendImages(album, $event)" />
+                </label>
+                <div class="news-inline-images" v-if="(album.image_urls || []).length">
+                  <figure class="news-inline-thumb" v-for="url in album.image_urls" :key="url">
+                    <img :src="url" alt="栏目照片" />
+                    <figcaption>{{ getFileName(url) }}</figcaption>
+                    <div class="row top-gap">
+                      <button type="button" class="ghost mini" @click="setReviewAlbumCover(album, url)">设为封面</button>
+                      <button type="button" class="danger mini" @click="removeReviewAlbumImage(album, url)">移除</button>
+                    </div>
+                  </figure>
+                </div>
+                <div class="row top-gap">
+                  <button type="button" @click="updateReviewAlbum(album)">保存栏目</button>
+                  <button type="button" class="danger" @click="deleteReviewAlbum(album)">删除栏目</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article v-if="activeFeature === 'intro'" class="panel-card">
+          <h2>团队简介管理</h2>
+          <p class="hint">该内容展示在前台底部“团队简介”模块，可粘贴 PDF 中团队介绍文本。</p>
+          <textarea v-model="teamIntro" rows="12" placeholder="输入团队简介文本"></textarea>
+          <div class="row top-gap">
+            <button @click="saveTeamIntro">保存团队简介</button>
+          </div>
+          <p class="hint">{{ introText }}</p>
+        </article>
+
+        <article v-if="activeFeature === 'awards'" class="panel-card">
+          <h2>{{ isAdmin ? '奖项管理' : '奖项展示' }}</h2>
+          <form v-if="isAdmin" class="award-form" @submit.prevent="addAward">
+            <input v-model.trim="awardForm.title" placeholder="奖项名称（必填）" required />
+            <select v-model="awardForm.award_type" aria-label="奖项分类">
+              <option value="team">团队赛</option>
+              <option value="personal">个人赛</option>
+            </select>
+            <input v-model.trim="awardForm.year" placeholder="年份" />
+            <select v-model="awardForm.level" aria-label="奖项级别">
+              <option v-for="level in awardLevelOptions" :key="level.value" :value="level.value">{{ level.label }}</option>
+            </select>
+            <input v-model.trim="awardForm.organizer" placeholder="主办方" />
+            <input v-model.trim="awardForm.description" placeholder="备注" />
+            <label class="check-row"><input type="checkbox" v-model="awardForm.pinned" /> 是否置顶：置顶奖项会排在最前方</label>
+            <label class="uploader-row">
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" @change="onAwardImagePick" />
+            </label>
+            <p class="hint">{{ awardImageText }}</p>
+            <img v-if="awardForm.image_url" class="award-preview" :src="awardForm.image_url" alt="奖项配图预览" />
+            <button type="submit">新增奖项</button>
+          </form>
+          <p class="hint" v-else>奖项内容由后台维护，访客仅可浏览。</p>
+          <div class="item-list">
+            <div class="list-item" v-for="a in awards" :key="a.id">
+              <img v-if="a.image_url" class="award-cover" :src="a.image_url" alt="奖项配图" />
+              <h3><span v-if="isPinned(a)" class="pin-badge">置顶</span>{{ a.title }}</h3>
+              <p class="meta"><span class="award-type-label">{{ awardTypeLabel(a) }}</span><span :class="['award-level-label', awardLevelClass(a)]">{{ normalizeAwardLevel(a.level) }}</span>{{ [a.year, a.organizer].filter(Boolean).join(' | ') || '未填写详情' }}</p>
+              <p>{{ a.description || '-' }}</p>
+              <div class="row top-gap" v-if="isAdmin">
+                <button type="button" class="ghost" @click="editAward(a)">编辑历史信息</button>
+                <button type="button" class="ghost" @click="toggleAwardPinned(a)">{{ isPinned(a) ? '取消置顶' : '置顶' }}</button>
+                <button type="button" class="danger" @click="removeAward(a.id)">删除</button>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article v-if="activeFeature === 'seniors'" class="panel-card">
+          <h2>{{ isAdmin ? '前辈墙管理' : '前辈墙' }}</h2>
+          <form v-if="isAdmin" class="award-form" @submit.prevent="addSenior">
+            <input v-model.trim="seniorForm.name" placeholder="姓名（必填）" required />
+            <select v-model="seniorForm.grade">
+              <option v-for="grade in seniorGradeOptions" :key="grade" :value="grade">{{ grade }}</option>
+            </select>
+            <select v-model="seniorForm.hall">
+              <option value="binary">二进制（RE / PWN）</option>
+              <option value="web">Web（含 Misc / 密码）</option>
+              <option value="dev">开发</option>
+              <option value="management">团队管理</option>
+            </select>
+            <input v-model.trim="seniorForm.direction" placeholder="主攻方向" />
+            <input v-model.trim="seniorForm.intro" placeholder="一句话简介" />
+            <input v-model.trim="seniorForm.achievements" placeholder="代表奖项/成果（可简写）" />
+            <input v-model.trim="seniorForm.advice" placeholder="给后辈建议（可选）" />
+            <label class="check-row"><input type="checkbox" v-model="seniorForm.pinned" /> 是否置顶：置顶前辈会排在最前方</label>
+            <label class="check-row"><input type="checkbox" v-model="seniorForm.responsible" /> 是否负责人：负责人会出现在前台“负责人”筛选中，仍保留原年级</label>
+            <label class="uploader-row">
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" @change="onSeniorImagePick" />
+            </label>
+            <p class="hint">{{ seniorImageText }}</p>
+            <img v-if="seniorForm.photo_url" class="award-preview senior-preview" :src="seniorForm.photo_url" alt="前辈照片预览" />
+            <button type="submit">新增前辈</button>
+          </form>
+          <p class="hint" v-else>前辈墙内容由后台维护，访客仅可浏览。</p>
+
+          <div class="seniors-grid">
+            <article class="senior-card" v-for="s in seniors" :key="s.id">
+              <template v-if="!seniorEditingState[String(s.id)]">
+                <div class="senior-photo-wrap">
+                  <img v-if="s.photo_url" class="senior-photo" :src="s.photo_url" :alt="s.name" />
+                </div>
+                <h3><span v-if="isPinned(s)" class="pin-badge">置顶</span><span v-if="isResponsible(s)" class="responsible-badge">负责人</span>{{ s.name || '未命名' }}</h3>
+                <p class="meta">{{ [s.grade, hallNameMap[s.hall], s.direction].filter(Boolean).join(' | ') || '信息待完善' }}</p>
+                <p>{{ s.intro || '-' }}</p>
+                <p class="meta">成果：{{ s.achievements || '-' }}</p>
+                <p class="meta">寄语：{{ s.advice || '-' }}</p>
+                <div class="row top-gap" v-if="isAdmin">
+                  <button type="button" @click="startSeniorEdit(s)">编辑</button>
+                  <button type="button" class="danger" @click="removeSenior(s.id)">删除</button>
+                </div>
+              </template>
+
+              <template v-else-if="isAdmin">
+              <div class="senior-photo-wrap">
+                <img v-if="getSeniorDraft(s).photo_url" class="senior-photo" :src="getSeniorDraft(s).photo_url" :alt="getSeniorDraft(s).name || s.name" />
+              </div>
+                <input v-model.trim="getSeniorDraft(s).name" placeholder="姓名" />
+                <div class="row">
+                  <select v-model="getSeniorDraft(s).grade">
+                    <option v-for="grade in seniorGradeOptions" :key="grade" :value="grade">{{ grade }}</option>
+                  </select>
+                  <select v-model="getSeniorDraft(s).hall">
+                    <option value="binary">二进制（RE / PWN）</option>
+                    <option value="web">Web（含 Misc / 密码）</option>
+                    <option value="dev">开发</option>
+              <option value="management">团队管理</option>
+                  </select>
+                </div>
+                <input v-model.trim="getSeniorDraft(s).direction" placeholder="主攻方向" />
+                <textarea v-model.trim="getSeniorDraft(s).intro" rows="2" placeholder="一句话简介"></textarea>
+                <input v-model.trim="getSeniorDraft(s).achievements" placeholder="代表奖项/成果" />
+                <textarea v-model.trim="getSeniorDraft(s).advice" rows="2" placeholder="给后辈建议"></textarea>
+                <label class="check-row"><input type="checkbox" v-model="getSeniorDraft(s).pinned" /> 是否置顶</label>
+                <label class="check-row"><input type="checkbox" v-model="getSeniorDraft(s).responsible" /> 是否负责人</label>
+                <label class="uploader-row top-gap">
+                  <span>更换前辈照片（选择后自动上传并保存）</span>
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" @change="onSeniorCardImagePick(s.id, $event)" />
+                </label>
+                <div class="row top-gap">
+                  <button type="button" @click="finishSeniorEdit(s.id)">编辑完成</button>
+                  <button type="button" class="ghost" @click="cancelSeniorEdit(s.id)">取消</button>
+                  <button type="button" class="danger" @click="removeSenior(s.id)">删除</button>
+                </div>
+              </template>
+              <template v-else>
+                <h3>{{ s.name }}</h3>
+                <p class="meta">{{ [s.grade, hallNameMap[s.hall], s.direction].filter(Boolean).join(' | ') || '信息待完善' }}</p>
+                <p>{{ s.intro || '-' }}</p>
+                <p class="meta">{{ s.achievements || '暂无成果信息' }}</p>
+                <p class="meta" v-if="s.advice">给后辈：{{ s.advice }}</p>
+              </template>
+            </article>
+          </div>
+        </article>
+
+        <article v-if="activeFeature === 'recruit'" class="panel-card">
+          <h2>报名管理</h2>
+          <p class="hint">这里可以查看所有前台提交的招新报名信息，支持按姓名、学号、堂口、联系方式搜索，也可以删除无效报名。</p>
+          <div class="row top-gap">
+            <button @click="fetchRecruitList">刷新报名列表</button>
+            <input v-model.trim="recruitKeyword" placeholder="搜索姓名 / 学号 / 堂口 / 联系方式" />
+            <span class="hint">共 {{ recruitList.length }} 条</span>
+          </div>
+          <details class="top-gap">
+            <summary>手动补录一条报名信息</summary>
+            <form class="recruit-form top-gap" @submit.prevent="submitRecruit">
+              <input v-model.trim="recruitForm.name" placeholder="姓名（必填）" required />
+              <input v-model.trim="recruitForm.student_id" placeholder="学号（必填）" required />
+              <input v-model.trim="recruitForm.college" placeholder="学院 / 专业" />
+              <input v-model.trim="recruitForm.grade" placeholder="年级" />
+              <input v-model.trim="recruitForm.phone" placeholder="手机号" />
+              <input v-model.trim="recruitForm.wechat" placeholder="微信" />
+              <input v-model.trim="recruitForm.email" placeholder="邮箱" />
+              <select v-model="recruitForm.hall">
+                <option value="binary">二进制（RE / PWN）</option>
+                <option value="web">Web（含 Misc / 密码）</option>
+                <option value="dev">开发</option>
+              <option value="management">团队管理</option>
+              </select>
+              <input v-model.trim="recruitForm.direction_detail" placeholder="意向方向" />
+              <input v-model.trim="recruitForm.weekly_hours" placeholder="每周可投入时间" />
+              <textarea v-model.trim="recruitForm.experience" rows="3" placeholder="基础经历 / 项目 / 比赛经验"></textarea>
+              <textarea v-model.trim="recruitForm.note" rows="2" placeholder="备注"></textarea>
+              <label class="check-row"><input type="checkbox" v-model="recruitForm.pinned" /> 是否置顶：置顶报名会排在后台列表最前方</label>
+              <button type="submit">提交补录</button>
+            </form>
+          </details>
+          <p class="hint">{{ recruitText }}</p>
+          <div class="group-grid">
+            <section class="group-card" v-for="(items, hall) in groupedRecruit" :key="hall">
+              <h3>{{ hallNameMap[hall] }}（{{ items.length }}）</h3>
+              <p class="hint" v-if="items.length === 0">暂无报名</p>
+              <div class="item-list">
+                <div class="list-item" v-for="item in items" :key="item.id">
+                  <h4><span v-if="isPinned(item)" class="pin-badge">置顶</span>{{ item.name }}（{{ item.student_id }}）</h4>
+                  <p class="meta">{{ [item.college, item.grade].filter(Boolean).join(' | ') || '学院年级未填写' }}</p>
+                  <p v-if="item.created_at" class="meta">报名时间：{{ formatDateTime(item.created_at) }}</p>
+                  <p>意向：{{ item.direction_detail || '-' }}；每周投入：{{ item.weekly_hours || '-' }}</p>
+                  <p>联系方式：{{ [item.phone, item.wechat, item.email].filter(Boolean).join(' / ') || '-' }}</p>
+                  <p>经历：{{ item.experience || '-' }}</p>
+                  <p v-if="item.note">备注：{{ item.note }}</p>
+                  <div class="row top-gap">
+                    <button type="button" class="ghost" @click="editRecruit(item)">编辑历史信息</button>
+                    <button type="button" class="ghost" @click="toggleRecruitPinned(item)">{{ isPinned(item) ? '取消置顶' : '置顶' }}</button>
+                    <button type="button" class="danger" @click="deleteRecruit(item.id)">删除</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article v-if="activeFeature === 'admins'" class="panel-card">
+          <h2>Admin Login & Users</h2>
+          <template v-if="!isAdmin">
+            <p class="hint">Login with an administrator account. Super administrators can add, delete, reset password, and change roles for other admin accounts.</p>
+            <form class="award-form" @submit.prevent="adminSubmitLogin">
+              <input v-model.trim="loginForm.username" autocomplete="username" placeholder="Admin username" />
+              <input v-model="loginForm.password" type="password" autocomplete="current-password" placeholder="Admin password" />
+              <button type="submit">Login</button>
+            </form>
+            <p class="hint">{{ loginText }}</p>
+          </template>
+
+          <template v-else>
+            <p class="hint">Current admin: {{ currentAdmin && (currentAdmin.display_name || currentAdmin.username) }}</p>
+            <h3>Add admin user</h3>
+            <form class="award-form" @submit.prevent="addAdminUser">
+              <input v-model.trim="adminUserForm.username" placeholder="Username: letters/numbers/_/./-/@" />
+              <input v-model.trim="adminUserForm.display_name" placeholder="Display name (optional)" />
+              <select v-model="adminUserForm.role">
+                <option value="admin">Admin</option>
+                <option value="superadmin">Super Admin</option>
+              </select>
+              <input v-model="adminUserForm.password" type="password" autocomplete="new-password" placeholder="Initial password, at least 6 chars" />
+              <button type="submit">Add user</button>
+            </form>
+            <p class="hint">{{ adminUserText }}</p>
+
+            <h3>Admin users</h3>
+            <div class="recruit-groups">
+              <section class="group-card" v-for="user in adminUsers" :key="user.id">
+                <h3>{{ user.display_name || user.username }}</h3>
+                <p class="meta">Username: {{ user.username }} | Role: {{ user.role }}</p>
+                <label class="meta">Role:
+                  <select :value="user.role" @change="changeAdminRole(user, $event.target.value)">
+                    <option value="admin">Admin</option>
+                    <option value="superadmin">Super Admin</option>
+                  </select>
+                </label>
+                <p class="meta">Created: {{ user.created_at || '-' }}</p>
+                <p class="meta">Last login: {{ user.last_login_at || '-' }}</p>
+                <div class="row top-gap">
+                  <button class="ghost" @click="promptResetAdminPassword(user)">Reset password</button>
+                  <button class="danger" @click="deleteAdminUser(user.id)">Delete user</button>
+                </div>
+              </section>
+            </div>
+          </template>
+        </article>
+
+        <article v-if="activeFeature === 'knowledge'" class="panel-card">
+          <h2>知识库管理</h2>
+          <p v-if="!isAdmin" class="hint">该模块需要后台权限，请先登录。</p>
+          <template v-else>
+            <div class="row">
+              <button @click="refreshStatus">刷新状态</button>
+              <button @click="ingestDefault">导入默认资料</button>
+              <button class="ghost" @click="rebuildDefault">重建默认知识库</button>
+            </div>
+            <p class="hint">{{ statusText }}</p>
+
+            <h3>上传 PDF 入库</h3>
+            <input type="file" accept=".pdf,application/pdf" multiple @change="onPdfChange" />
+            <div class="row top-gap">
+              <button @click="uploadPdf">上传并入库</button>
+            </div>
+            <p class="hint">{{ uploadPdfText }}</p>
+          </template>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,75 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flyteamers - 前辈墙</title>
+  <link rel="stylesheet" href="/static/public.css" />
+</head>
+<body class="module-page flyteamers-page">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">Flyteamers</div>
+      <nav class="nav">
+        <a href="/">&#x9996;&#x9875;</a>
+        <a href="/news">&#x56e2;&#x961f;&#x65b0;&#x95fb;</a>
+        <a href="/review">&#x56e2;&#x961f;&#x56de;&#x987e;</a>
+        <a href="/awards">&#x5956;&#x9879;&#x8363;&#x8a89;</a>
+        <a href="/flyteamers">Flyteamers</a>
+        <a href="/recruit">&#x62db;&#x65b0;&#x62a5;&#x540d;</a>
+        <a href="/intro">&#x56e2;&#x961f;&#x7b80;&#x4ecb;</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="section light flyteamers-hero">
+      <div class="container">
+        <h2>Flyteamers 前辈墙</h2>
+        <p class="section-sub">2013-2025 各届成员风采，点击级别筛选；双击照片可放大查看原图。</p>
+        <div id="gradeFilters" class="grade-filters"></div>
+      </div>
+    </section>
+
+    <section id="hall" class="section">
+      <div class="container">
+        <div id="gradeStat" class="section-sub"></div>
+        <div id="flyteamersGrid" class="senior-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>Flyteamers · Flyteam 安全团队</div>
+      <span>© Southwest Minzu University</span>
+    </div>
+  </footer>
+
+  <button id="chatFab" class="chat-fab" aria-label="打开团队咨询">咨</button>
+  <aside id="chatPanel" class="chat-panel">
+    <div class="chat-head">
+      <strong>团队信息咨询</strong>
+      <button id="chatClose" type="button">关闭</button>
+    </div>
+    <div id="chatMessages" class="chat-messages"></div>
+    <div class="chat-input">
+      <textarea id="chatText" rows="3" placeholder="例如：Flyteam对于新生的培养方式是什么？"></textarea>
+      <button id="chatSend" type="button">发送</button>
+    </div>
+  </aside>
+
+  <div id="imgLightbox" class="img-lightbox" aria-hidden="true">
+    <figure>
+      <img id="imgLightboxImage" alt="图片预览" />
+      <figcaption id="imgLightboxCaption">图片预览</figcaption>
+      <div class="lightbox-actions">
+        <button id="imgLightboxClose" type="button">关闭</button>
+      </div>
+    </figure>
+  </div>
+
+  <script src="/static/page_backdrop.js"></script>
+  <script src="/static/flyteamers.js"></script>
+</body>
+</html>

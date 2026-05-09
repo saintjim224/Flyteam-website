@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" class="home-root">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flyteam</title>
+  <link rel="stylesheet" href="/static/public.css" />
+</head>
+<body class="home-only">
+  <header class="topbar home-topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/">Flyteam</a>
+      <nav class="nav">
+          <a href="/">&#x9996;&#x9875;</a>
+          <a href="/news">&#x56e2;&#x961f;&#x65b0;&#x95fb;</a>
+          <a href="/review">&#x56e2;&#x961f;&#x56de;&#x987e;</a>
+          <a href="/awards">&#x5956;&#x9879;&#x8363;&#x8a89;</a>
+          <a href="/flyteamers">Flyteamers</a>
+          <a href="/recruit">&#x62db;&#x65b0;&#x62a5;&#x540d;</a>
+          <a href="/intro">&#x56e2;&#x961f;&#x7b80;&#x4ecb;</a>
+        </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="hero home-hero">
+      <div id="heroBg" class="hero-bg"></div>
+      <div id="homePhotoWall" class="home-photo-wall" aria-hidden="true"></div>
+      <div class="hero-mask home-mask"></div>
+      <div class="hero-content home-hero-content">
+        <p class="sub">Southwest Minzu University &middot; Cyber Security Team</p>
+        <h1>Flyteam</h1>
+        <p id="heroOverview" class="desc">&#x4ee5;&#x653b;&#x9632;&#x5b9e;&#x6218;&#x4e3a;&#x6838;&#x5fc3;&#xff0c;&#x5728;&#x6301;&#x7eed;&#x63a2;&#x7d22;&#x4e2d;&#x6210;&#x957f;&#x3002;</p>
+        <div id="heroDots" class="hero-dots"></div>
+      </div>
+      <div class="scroll-hint">Photo wall &middot; Navigate above</div>
+    </section>
+  </main>
+
+  <button id="chatFab" class="chat-fab" aria-label="open chat">&#x54a8;</button>
+  <aside id="chatPanel" class="chat-panel">
+    <div class="chat-head">
+      <strong>&#x56e2;&#x961f;&#x4fe1;&#x606f;&#x54a8;&#x8be2;</strong>
+      <button id="chatClose" type="button">&#x5173;&#x95ed;</button>
+    </div>
+    <div id="chatMessages" class="chat-messages"></div>
+    <div class="chat-input">
+      <textarea id="chatText" rows="3" placeholder="例如：Flyteam对于新生的培养方式是什么？"></textarea>
+      <button id="chatSend" type="button">&#x53d1;&#x9001;</button>
+    </div>
+  </aside>
+  <div id="imgLightbox" class="img-lightbox" aria-hidden="true">
+    <figure>
+      <img id="imgLightboxImage" alt="preview" />
+      <figcaption id="imgLightboxCaption">&#x56fe;&#x7247;&#x9884;&#x89c8;</figcaption>
+      <div class="lightbox-actions">
+        <button id="imgLightboxClose" type="button">&#x5173;&#x95ed;</button>
+      </div>
+    </figure>
+  </div>
+
+  <script src="/static/public.js"></script>
+</body>
+</html>

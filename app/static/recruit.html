@@ -1,0 +1,93 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flyteam 招新报名</title>
+  <link rel="stylesheet" href="/static/public.css" />
+</head>
+<body class="module-page recruit-page">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">Flyteam 招新</div>
+      <nav class="nav">
+        <a href="/">&#x9996;&#x9875;</a>
+        <a href="/news">&#x56e2;&#x961f;&#x65b0;&#x95fb;</a>
+        <a href="/review">&#x56e2;&#x961f;&#x56de;&#x987e;</a>
+        <a href="/awards">&#x5956;&#x9879;&#x8363;&#x8a89;</a>
+        <a href="/flyteamers">Flyteamers</a>
+        <a href="/recruit">&#x62db;&#x65b0;&#x62a5;&#x540d;</a>
+        <a href="/intro">&#x56e2;&#x961f;&#x7b80;&#x4ecb;</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="section light flyteamers-hero">
+      <div class="container">
+        <h2>招新报名</h2>
+        <p class="section-sub">先按堂口筛选，再填写信息提交。流程简洁，操作更清晰。</p>
+        <div id="hallFilters" class="grade-filters"></div>
+        <p id="hallHint" class="section-sub recruit-hint"></p>
+      </div>
+    </section>
+
+    <section id="apply" class="section">
+      <div class="container">
+        <div class="recruit-page-wrap">
+          <h3>报名信息</h3>
+          <form id="recruitForm" class="recruit-form">
+            <input name="name" placeholder="姓名（必填）" required />
+            <input name="student_id" placeholder="学号（必填）" required />
+            <input name="college" placeholder="学院 / 专业" />
+            <input name="grade" placeholder="年级（例如 2026 级）" />
+            <input name="phone" placeholder="手机号" />
+            <input name="wechat" placeholder="微信" />
+            <input name="email" placeholder="邮箱" />
+            <input id="hallDisplay" placeholder="目标堂口" readonly />
+            <input type="hidden" id="hallInput" name="hall" value="binary" />
+            <input name="direction_detail" placeholder="细分方向（例如 Java 安全 / CTF Web）" />
+            <input name="weekly_hours" placeholder="每周可投入时长（例如 10 小时）" />
+            <textarea name="experience" rows="4" placeholder="相关经历（比赛、项目、学习经历）"></textarea>
+            <textarea name="note" rows="3" placeholder="补充说明"></textarea>
+            <div class="captcha-row">
+              <input type="hidden" id="captchaToken" name="captcha_token" />
+              <div class="captcha-box">
+                <span class="captcha-label">动态验证码</span>
+                <pre id="captchaQuestion" class="captcha-code">加载中...</pre>
+                <button id="captchaRefresh" type="button" class="captcha-refresh">换一个</button>
+              </div>
+              <input id="captchaAnswer" name="captcha_answer" placeholder="请输入 printf 输出结果" inputmode="numeric" autocomplete="off" required />
+            </div>
+            <button type="submit">提交报名</button>
+          </form>
+          <p id="recruitMsg" class="section-sub"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>Flyteam 招新报名系统</div>
+      <span>© Southwest Minzu University</span>
+    </div>
+  </footer>
+
+  <button id="chatFab" class="chat-fab" aria-label="打开团队咨询">咨</button>
+  <aside id="chatPanel" class="chat-panel">
+    <div class="chat-head">
+      <strong>团队信息咨询</strong>
+      <button id="chatClose" type="button">关闭</button>
+    </div>
+    <div id="chatMessages" class="chat-messages"></div>
+    <div class="chat-input">
+      <textarea id="chatText" rows="3" placeholder="例如：Flyteam对于新生的培养方式是什么？"></textarea>
+      <button id="chatSend" type="button">发送</button>
+    </div>
+  </aside>
+
+  <script src="/static/page_backdrop.js"></script>
+  <script src="/static/recruit.js"></script>
+</body>
+</html>

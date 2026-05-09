@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>团队回顾详情 - Flyteam</title>
+  <link rel="stylesheet" href="/static/public.css" />
+</head>
+<body class="module-page review-detail-body">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/">Flyteam</a>
+      <nav class="nav">
+        <a href="/">首页</a>
+        <a href="/news">团队新闻</a>
+        <a href="/review">团队回顾</a>
+        <a href="/awards">奖项荣誉</a>
+        <a href="/flyteamers">Flyteamers</a>
+        <a href="/recruit">招新报名</a>
+        <a href="/intro">团队简介</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="reviewDetail" class="section light page-main review-detail-page">
+    <div class="container">
+      <a class="back-link" href="/review">← 返回团队回顾</a>
+      <div class="page-title-bar review-detail-hero">
+        <p class="sub page-sub">Flyteam Review</p>
+        <h2 id="reviewDetailTitle">团队回顾</h2>
+        <p id="reviewDetailMeta" class="review-meta"></p>
+        <p id="reviewDetailSummary" class="section-sub"></p>
+      </div>
+      <article id="reviewDetailContent" class="review-detail-content"></article>
+      <div id="reviewDetailGrid" class="review-photo-grid"></div>
+    </div>
+  </main>
+
+  <button id="chatFab" class="chat-fab" aria-label="open chat">咨</button>
+  <aside id="chatPanel" class="chat-panel">
+    <div class="chat-head">
+      <strong>团队信息咨询</strong>
+      <button id="chatClose" type="button">关闭</button>
+    </div>
+    <div id="chatMessages" class="chat-messages"></div>
+    <div class="chat-input">
+      <textarea id="chatText" rows="3" placeholder="例如：Flyteam对于新生的培养方式是什么？"></textarea>
+      <button id="chatSend" type="button">发送</button>
+    </div>
+  </aside>
+  <div id="imgLightbox" class="img-lightbox" aria-hidden="true">
+    <figure>
+      <img id="imgLightboxImage" alt="preview" />
+      <figcaption id="imgLightboxCaption">图片预览</figcaption>
+      <div class="lightbox-actions">
+        <button id="imgLightboxClose" type="button">关闭</button>
+      </div>
+    </figure>
+  </div>
+
+  <script src="/static/page_backdrop.js"></script>
+  <script src="/static/public.js"></script>
+</body>
+</html>
